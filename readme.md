@@ -1,12 +1,25 @@
-# HackerNews Clone (Express + PostgreSQL)
+# Hacker News Clone (Express + PostgreSQL)
 
-This is a simple HackerNews clone built with Express.js and PostgreSQL. The purpose of this project is to educate users on how to deploy database-dependent applications on Leapcell.
+This is a simple Hacker News clone built with Express.js and PostgreSQL. The purpose of this project is to educate users on how to deploy database-dependent applications on Leapcell.
 
 ## Features
 
 - Express.js backend
 - PostgreSQL database integration
 - EJS templating for rendering views
+
+## Project Structure
+
+```
+.
+├── LICENSE               # License file
+├── package.json          # Project metadata and dependencies
+└── src/                  # Application source code
+    ├── app.js            # Main application entry point
+    └── views/            # View templates
+        ├── index.ejs     # Homepage displaying the list of posts
+        └── post-detail.ejs # Template for displaying post details
+```
 
 ## Deployment on Leapcell
 
