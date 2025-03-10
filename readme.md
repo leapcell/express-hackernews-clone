@@ -19,6 +19,7 @@ This is a simple Hacker News clone built with Express.js and PostgreSQL. The pur
     └── views/            # View templates
         ├── index.ejs     # Homepage displaying the list of posts
         └── post-detail.ejs # Template for displaying post details
+        └── post-detail.ejs # pg missing
 ```
 
 ## Deployment on Leapcell
@@ -61,7 +62,7 @@ To start the project locally, ensure your PostgreSQL instance is running and exe
 node src/app.js
 ```
 
-The application will be accessible at `http://localhost:3000`.
+The application will be accessible at `http://localhost:8080`.
 
 ### Deploying on Leapcell
 

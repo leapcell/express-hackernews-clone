@@ -6,12 +6,12 @@ const path = require('path');
 
 // Create an Express application
 const app = express();
-// Set the port, use environment variable PORT or default to 3000
-const port = process.env.PORT || 3000;
+// Set the port, use environment variable PORT or default to 8080
+const port = process.env.PORT || 8080;
 
 // Configure PostgreSQL connection pool using DSN from environment variable
 const pool = new Pool({
-    connectionString: process.env.DSN,
+    connectionString: process.env.PG_DSN,
 });
 
 // Middleware setup
@@ -44,7 +44,23 @@ const checkAndCreateTable = async (tableName, createQuery) => {
     } catch (error) {
         console.error(`Error creating ${tableName} table:`, error);
     }
-};
+}
+
+const checkPoolConnection = async () => {
+    if (process.env.PG_DSN === undefined) {
+        console.error('Please set the environment variable PG_DSN with the PostgreSQL connection string');
+        return false;
+    }
+    try {
+        const client = await pool.connect();
+        console.log('Connected to PostgreSQL');
+        client.release();
+        return true;
+    } catch (error) {
+        console.error('Error connecting to PostgreSQL:', error);
+    }
+    return false;
+}
 
 // Define table creation queries
 // SQL query to create the 'posts' table
@@ -68,13 +84,21 @@ const commentsTableQuery = `
     );
 `;
 
-// Check and create tables on application startup
-checkAndCreateTable('posts', postsTableQuery);
-checkAndCreateTable('comments', commentsTableQuery);
+
 
 // Route to display the list of posts
 app.get('/', async (req, res) => {
     try {
+        // Check PostgreSQL connection
+        if (!await checkPoolConnection()) {
+            console.error('PostgreSQL connection failed, please check your connection string in the environment variable PG_DSN');
+            return res.render('missing-pg')
+        }
+        
+        // Check and create tables on application startup
+        checkAndCreateTable('posts', postsTableQuery);
+        checkAndCreateTable('comments', commentsTableQuery);
+
         // SQL query to select all posts ordered by creation time in descending order
         const { rows } = await pool.query('SELECT * FROM posts ORDER BY created_at DESC');
         const posts = [];
@@ -85,11 +109,17 @@ app.get('/', async (req, res) => {
             if (commentsResult.rows.length > 0) {
                 commentCount = commentsResult.rows[0].count;
             }
-            posts.push({ 
+            let link = ''
+            try {
+                link = new URL(row.link).hostname
+            } catch (error) {
+                console.error('Error parsing URL:', error);
+            }
+            posts.push({
                 id: row.id,
                 title: row.title,
                 link: row.link,
-                host: row.link ? new URL(row.link).hostname : '',
+                host: link,
                 content: row.content,
                 created_at: row.created_at || new Date(),
                 comment_count: commentCount,
@@ -136,18 +166,24 @@ app.get('/post/:id', async (req, res) => {
                 created_at: row.created_at || new Date(),
             });
         }
+        let link = ''
+        try {
+            link = new URL(post.link).hostname
+        } catch (error) {
+            console.error('Error parsing URL:', error);
+        }
         // Render the 'post-detail' view with the post and its comments
-        res.render('post-detail', { 
+        res.render('post-detail', {
             post: {
                 id: post.id,
                 title: post.title,
                 link: post.link,
-                host: post.link ? new URL(post.link).hostname : '',
+                host: link,
                 content: post.content,
                 created_at: post.created_at || new Date(),
                 comments: comments,
             }
-         });
+        });
     } catch (error) {
         console.error('Error fetching post details:', error);
         res.status(500).send('Internal Server Error');
